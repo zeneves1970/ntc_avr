@@ -35,6 +35,17 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
 
+    - name: Save hash of seen_links_ntc.txt before running the script
+      id: hash-before
+      run: |
+        if [ -f seen_links_ntc.txt ]; then
+          hash_before=$(sha256sum seen_links_ntc.txt | cut -d ' ' -f 1)
+          echo "Hash before: $hash_before"
+          echo "::set-output name=hash_before::$hash_before"
+        else
+          echo "::set-output name=hash_before::"
+        fi
+
     - name: Run the Python Script
       env:
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
@@ -42,18 +53,28 @@ jobs:
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
       run: python3 ntc_avr.py
 
-    - name: Check if seen_links_ntc.txt was modified
+    - name: Save hash of seen_links_ntc.txt after running the script
+      id: hash-after
       run: |
         if [ -f seen_links_ntc.txt ]; then
-          echo "File seen_links_ntc.txt was modified."
-          ls -l seen_links_ntc.txt
+          hash_after=$(sha256sum seen_links_ntc.txt | cut -d ' ' -f 1)
+          echo "Hash after: $hash_after"
+          echo "::set-output name=hash_after::$hash_after"
         else
-          echo "File not found!"
+          echo "::set-output name=hash_after::"
+        fi
+
+    - name: Check if seen_links_ntc.txt was modified
+      run: |
+        if [ "${{ steps.hash-before.outputs.hash_before }}" != "${{ steps.hash-after.outputs.hash_after }}" ]; then
+          echo "File seen_links_ntc.txt was modified."
+        else
+          echo "File not modified."
         fi
 
     # Only save cache if seen_links_ntc.txt was updated
     - name: Save Cache if Links Changed
-      if: steps.cache-restore.outputs.cache-hit != 'true' || (steps.cache-restore.outputs.cache-hit == 'true' && ! cmp -s seen_links_ntc.txt seen_links_ntc.txt.bak)
+      if: steps.hash-before.outputs.hash_before != steps.hash-after.outputs.hash_after
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
@@ -68,6 +89,6 @@ jobs:
         if [ -f seen_links_ntc.txt ]; then
           echo "Cache file content after script execution:"
           cat seen_links_ntc.txt
-        else:
+        else
           echo "No cache file found after script execution."
         fi
