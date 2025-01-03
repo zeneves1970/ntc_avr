@@ -42,14 +42,17 @@ jobs:
       run: python3 ntc_avr.py
 
     - name: Check Cache Key After Script
+      id: check-key
       run: |
         if [ -f seen_links_ntc.txt ]; then
           new_key=$(sha256sum seen_links_ntc.txt | awk '{print $1}')
           echo "NEW_CACHE_KEY=$new_key" >> $GITHUB_ENV
         else
           echo "NEW_CACHE_KEY=empty-cache" >> $GITHUB_ENV
-        fi
-      id: check-key
 
     - name: Save Cache If Updated
-      if: ${{ steps.cache-restore.outputs.cache-hit == 'false' || env.NEW_CACHE_KEY != hashFiles('seen_links_ntc.
+      if: ${{ steps.cache-restore.outputs.cache-hit == 'false' || env.NEW_CACHE_KEY != hashFiles('seen_links_ntc.txt') }}
+      uses: actions/cache@v3
+      with:
+        path: seen_links_ntc.txt
+        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.NEW_CACHE_KEY }}
