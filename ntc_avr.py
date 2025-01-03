@@ -35,7 +35,7 @@ def save_seen_links_ntc(seen_links_ntc):
     try:
         with open(SEEN_LINKS_NTC_FILE, "w") as file:
             file.writelines(f"{link}\n" for link in sorted(seen_links_ntc))
-        print("[DEBUG] Cache atualizada.")
+        print(f"[DEBUG] Cache atualizada com {len(seen_links_ntc)} links.")
     except Exception as e:
         print(f"[ERRO] Falha ao salvar links: {e}")
 
