@@ -27,6 +27,7 @@ jobs:
 
     # Step to check if the cache is already updated and needs to be restored
     - name: Restore Cache if Available
+      id: cache-restore
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
@@ -52,7 +53,7 @@ jobs:
 
     # Only save cache if seen_links_ntc.txt was updated
     - name: Save Cache if Links Changed
-      if: ${{ steps.cache-key.outputs.cache-hit != 'true' }}
+      if: steps.cache-restore.outputs.cache-hit != 'true' || (steps.cache-restore.outputs.cache-hit == 'true' && ! cmp -s seen_links_ntc.txt seen_links_ntc.txt.bak)
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
@@ -62,8 +63,8 @@ jobs:
 
     - name: Final Check and Cache Status
       run: |
-        echo "Cache Key Before: ${{ steps.cache-key.outputs.cache-key }}"
-        echo "New Cache Key After: ${{ steps.cache-key.outputs.new-cache-key }}"
+        echo "Cache Key Before: ${{ steps.cache-restore.outputs.cache-key }}"
+        echo "New Cache Key After: ${{ steps.cache-restore.outputs.cache-key }}"
         if [ -f seen_links_ntc.txt ]; then
           echo "Cache file content after script execution:"
           cat seen_links_ntc.txt
