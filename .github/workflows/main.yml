@@ -64,10 +64,11 @@ jobs:
         fi
         echo "new_key=$new_key" >> $GITHUB_ENV
 
-    # Verificar se houve alteração e salvar a cache
+    # Salvar cache somente se a chave mudar
     - name: Save Updated Cache
       if: ${{ env.key != env.new_key }}
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
         key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.new_key }}
+
