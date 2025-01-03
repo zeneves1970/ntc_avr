@@ -125,12 +125,14 @@ def get_article_content(url):
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        # Extrair o título diretamente
-        title_elem = soup.find("a", class_="entry-title td-module-title")
-        title = title_elem['title'] if title_elem and 'title' in title_elem.attrs else "Título não encontrado."
+        # Localizar a tag <h3> com a classe "entry-title td-module-title"
+        title_elem = soup.find("h3", class_="entry-title td-module-title")
+        if title_elem:
+            # Extrair o texto do link dentro de <h3>
+            title = title_elem.get_text(strip=True)
+            return title
 
-        # Retorna apenas o título para simplificar o conteúdo enviado por e-mail
-        return title
+        return "Título não encontrado."
     except Exception as e:
         print(f"Erro ao processar a notícia: {e}")
         return "Erro ao processar a notícia."
