@@ -153,8 +153,8 @@ def get_article_content(url):
 
 
 def monitor_news():
-    seen_links_ntc = load_seen_links_ntc()
-    current_links = get_news_links(URL)
+    seen_links_ntc = load_seen_links_ntc()  # Carrega links já vistos
+    current_links = get_news_links(URL)  # Links encontrados na página
 
     # Encontrando novos links que não foram vistos antes
     new_links = {link for link in current_links if link not in seen_links_ntc}
@@ -170,7 +170,7 @@ def monitor_news():
 
         # Atualiza a cache após envio com os novos links
         seen_links_ntc.update(new_links)
-        save_seen_links_ntc(seen_links)
+        save_seen_links_ntc(seen_links_ntc)  # Corrigido aqui
     else:
         print("Nenhuma nova notícia para enviar e-mail.")
 
