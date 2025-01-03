@@ -67,17 +67,20 @@ def save_seen_links_ntc(seen_links_ntc):
 
 
 # Função para enviar uma notificação por e-mail
-def send_email_notification(article_content):
-    subject = "Nova noticia!"
+def send_email_notification(article_title, article_url):
+    subject = "Novo comunicado da PGRP!"
 
+    # Criar o corpo do e-mail com HTML
     email_text = f"""\
 From: {EMAIL_USER}
 To: {TO_EMAIL}
 Subject: {subject}
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/html; charset=utf-8
 Content-Transfer-Encoding: 8bit
 
-{article_content}
+<p><strong>{article_title}</strong></p>
+<p>Leia o artigo completo clicando no link abaixo:</p>
+<p><a href="{article_url}" target="_blank">{article_url}</a></p>
 """
     try:
         with smtplib.SMTP("smtp.gmail.com", 587) as server:
@@ -139,8 +142,8 @@ def get_article_content(url):
 
 
 def monitor_news():
-    seen_links_ntc = load_seen_links_ntc()  # Carrega links já vistos
-    current_links = get_news_links(URL)  # Links encontrados na página
+    seen_links_ntc = load_seen_links_ntc()
+    current_links = get_news_links(URL)
 
     # Encontrando novos links que não foram vistos antes
     new_links = {link for link in current_links if link not in seen_links_ntc}
@@ -149,14 +152,17 @@ def monitor_news():
         print(f"Novos links encontrados: {new_links}")
         for link in new_links:
             try:
-                # Envia e-mail apenas para novos links
-                send_email_notification(get_article_content(link))
+                # Obter título da notícia
+                article_title = get_article_content(link)
+                
+                # Enviar e-mail com título e link
+                send_email_notification(article_title, link)
             except Exception as e:
                 print(f"Erro ao enviar e-mail: {e}")
 
         # Atualiza a cache após envio com os novos links
         seen_links_ntc.update(new_links)
-        save_seen_links_ntc(seen_links_ntc)  # Corrigido aqui
+        save_seen_links_ntc(seen_links_ntc)
     else:
         print("Nenhuma nova notícia para enviar e-mail.")
 
