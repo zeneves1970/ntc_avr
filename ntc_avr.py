@@ -31,15 +31,15 @@ def load_seen_links_ntc():
     return seen_links
 
 def save_seen_links_ntc(seen_links_ntc):
-  """Salva links processados."""
-  try:
-    # Open the file in append mode to add new links without deleting previous ones
-    with open(SEEN_LINKS_NTC_FILE, "a") as file:
-      for link in sorted(seen_links_ntc):
-        file.write(f"{link}\n")
-    print(f"[DEBUG] Cache atualizada com {len(seen_links_ntc)} links.")
-  except Exception as e:
-    print(f"[ERRO] Falha ao salvar links: {e}")
+    """Salva links processados."""
+    try:
+        # Reescrever o arquivo com todos os links processados, sem duplicações
+        with open(SEEN_LINKS_NTC_FILE, "w") as file:
+            for link in sorted(seen_links_ntc):
+                file.write(f"{link}\n")
+        print(f"[DEBUG] Cache atualizada com {len(seen_links_ntc)} links.")
+    except Exception as e:
+        print(f"[ERRO] Falha ao salvar links: {e}")
 
 
 def get_news_links(url):
@@ -111,10 +111,11 @@ def monitor_news():
             title, url = get_article_title_and_url(link)
             if title and url:
                 send_email_notification(title, url)
-        seen_links_ntc.add(link)  # Adiciona o novo link ao conjunto
+        seen_links_ntc.update(new_links)  # Adiciona os novos links ao conjunto
         save_seen_links_ntc(seen_links_ntc)
     else:
         print("[DEBUG] Nenhuma nova notícia.")
 
 if __name__ == "__main__":
     monitor_news()
+
