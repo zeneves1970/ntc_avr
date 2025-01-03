@@ -44,6 +44,15 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
 
+    - name: Check Cache Content
+      run: |
+        if [ -f seen_links_ntc.txt ]; then
+          echo "Cache file exists. Content:"
+          cat seen_links_ntc.txt
+        else
+          echo "Cache file does not exist."
+        fi
+
     - name: Run the Python Script
       env:
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
