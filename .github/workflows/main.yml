@@ -41,29 +41,15 @@ jobs:
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
       run: python3 ntc_avr.py
 
-    - name: Save Cache If File Changed
+    - name: Check Cache Key After Script
       run: |
         if [ -f seen_links_ntc.txt ]; then
           new_key=$(sha256sum seen_links_ntc.txt | awk '{print $1}')
-          echo "New cache key: $new_key"
-          if [ "$new_key" != "${{ steps.cache-restore.outputs.cache-hit }}" ]; then
-            echo "Cache changed, saving new cache..."
-            echo "::set-output name=cache-updated::true"
-          else
-            echo "Cache not changed, skipping save."
-            echo "::set-output name=cache-updated::false"
-          fi
+          echo "NEW_CACHE_KEY=$new_key" >> $GITHUB_ENV
         else
-          echo "File seen_links_ntc.txt not found!"
-          echo "::set-output name=cache-updated::false"
+          echo "NEW_CACHE_KEY=empty-cache" >> $GITHUB_ENV
         fi
-      id: cache-check
+      id: check-key
 
-    - name: Save Updated Cache
-      if: steps.cache-check.outputs.cache-updated == 'true'
-      uses: actions/cache@v3
-      with:
-        path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-cache-ntc-${{ hashFiles('seen_links_ntc.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-seen-links-cache-ntc-
+    - name: Save Cache If Updated
+      if: ${{ steps.cache-restore.outputs.cache-hit == 'false' || env.NEW_CACHE_KEY != hashFiles('seen_links_ntc.
