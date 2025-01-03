@@ -78,7 +78,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-cache-ntc-${{ hashFiles('seen_links_ntc.txt') }}
+        key: ${{ runner.os }}-seen-links-cache-ntc-${{ steps.hash-after.outputs.hash_after }}  # Key based on hash after modification
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
 
