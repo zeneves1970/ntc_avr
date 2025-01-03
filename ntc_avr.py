@@ -56,12 +56,13 @@ def load_seen_links_ntc():
 
 def save_seen_links_ntc(seen_links_ntc):
     try:
+        # Abrir o arquivo para escrita e garantir que a cache seja atualizada
         with open(SEEN_LINKS_NTC_FILE, "w") as file:
             for link in seen_links_ntc:
                 file.write(f"{link}\n")
-            file.flush()
-            os.fsync(file.fileno())  # Garante que as mudanças sejam persistidas
-        print("Cache atualizado com links novos.")
+            file.flush()  # Forçar a escrita no arquivo
+            os.fsync(file.fileno())  # Garantir que o conteúdo seja persistido no disco
+        print("Cache atualizada com novos links.")
     except Exception as e:
         print(f"Erro ao salvar links na cache: {e}")
 
@@ -140,8 +141,8 @@ def get_article_title_and_url(url):
 
 
 def monitor_news():
-    seen_links_ntc = load_seen_links_ntc()
-    current_links = get_news_links(URL)
+    seen_links_ntc = load_seen_links_ntc()  # Carregar links já vistos
+    current_links = get_news_links(URL)  # Obter os links atuais
 
     # Encontrando novos links que não foram vistos antes
     new_links = {link for link in current_links if link not in seen_links_ntc}
@@ -150,7 +151,7 @@ def monitor_news():
         print(f"Novos links encontrados: {new_links}")
         for link in new_links:
             try:
-                # Obter o título e o link da notícia
+                # Obter título e link da notícia
                 article_title, article_url = get_article_title_and_url(link)
                 
                 if article_title and article_url:
@@ -159,9 +160,9 @@ def monitor_news():
             except Exception as e:
                 print(f"Erro ao enviar e-mail: {e}")
 
-        # Atualiza a cache após envio com os novos links
+        # Atualizar a lista de links vistos (cache) com os novos links
         seen_links_ntc.update(new_links)
-        save_seen_links_ntc(seen_links_ntc)
+        save_seen_links_ntc(seen_links_ntc)  # Gravar a cache atualizada
     else:
         print("Nenhuma nova notícia para enviar e-mail.")
 
