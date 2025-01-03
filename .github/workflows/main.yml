@@ -37,7 +37,7 @@ jobs:
     - name: Save hash of seen_links_ntc.txt before running the script
       id: hash-before
       run: |
-        if [ -f seen_links_ntc.txt ]; then
+        if [ -s seen_links_ntc.txt ]; then
           echo "Content before:"
           cat seen_links_ntc.txt
           hash_before=$(sha256sum seen_links_ntc.txt | cut -d ' ' -f 1)
@@ -57,7 +57,7 @@ jobs:
     - name: Save hash of seen_links_ntc.txt after running the script
       id: hash-after
       run: |
-        if [ -f seen_links_ntc.txt ]; then
+        if [ -s seen_links_ntc.txt ]; then
           echo "Content after:"
           cat seen_links_ntc.txt
           hash_after=$(sha256sum seen_links_ntc.txt | cut -d ' ' -f 1)
