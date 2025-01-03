@@ -77,3 +77,14 @@ jobs:
       with:
         path: seen_links_ntc.txt
         key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.NEW_CACHE_KEY }}
+
+    - name: Final Check and Cache Status
+      run: |
+        echo "Cache Key Before: ${{ env.CACHE_KEY }}"
+        echo "New Cache Key After: ${{ env.NEW_CACHE_KEY }}"
+        if [ -f seen_links_ntc.txt ]; then
+          echo "Cache file content after script execution:"
+          cat seen_links_ntc.txt
+        else
+          echo "No cache file found after script execution."
+        fi
