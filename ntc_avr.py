@@ -108,8 +108,10 @@ def monitor_news():
     if new_links:
         print(f"[DEBUG] Novos links: {new_links}")
         for link in new_links:
-            # ... (restante do código original)
-            seen_links_ntc.add(link)  # Adiciona o novo link ao conjunto
+            title, url = get_article_title_and_url(link)
+            if title and url:
+                send_email_notification(title, url)
+        seen_links_ntc.add(link)  # Adiciona o novo link ao conjunto
         save_seen_links_ntc(seen_links_ntc)
     else:
         print("[DEBUG] Nenhuma nova notícia.")
