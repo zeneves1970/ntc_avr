@@ -25,7 +25,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    # Gerar chave de cache baseada no conteúdo de seen_links_ntc.txt
+    # Gerar chave de cache com base no conteúdo de seen_links_ntc.txt
     - name: Generate Cache Key
       id: cache-key
       run: |
@@ -36,7 +36,7 @@ jobs:
         fi
         echo "key=$key" >> $GITHUB_ENV
 
-    # Restaurar cache usando a chave gerada
+    # Restaurar cache utilizando a chave gerada
     - name: Restore Cache
       uses: actions/cache@v3
       with:
@@ -53,7 +53,7 @@ jobs:
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
       run: python3 ntc_avr.py
 
-    # Gerar um novo hash para seen_links_ntc.txt
+    # Gerar a nova chave de cache após a execução
     - name: Generate New Cache Key
       id: new-cache-key
       run: |
@@ -64,9 +64,9 @@ jobs:
         fi
         echo "new_key=$new_key" >> $GITHUB_ENV
 
-    # Salvar o cache se houve alteração no arquivo seen_links_ntc.txt
+    # Verificar se houve alteração e salvar a cache
     - name: Save Updated Cache
-      if: env.key != env.new_key
+      if: ${{ env.key != env.new_key }}
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
