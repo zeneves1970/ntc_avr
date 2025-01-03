@@ -25,7 +25,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    # Step to check if the cache is already updated and needs to be restored
     - name: Restore Cache if Available
       id: cache-restore
       uses: actions/cache@v3
@@ -66,19 +65,20 @@ jobs:
 
     - name: Check if seen_links_ntc.txt was modified
       run: |
+        echo "HASH_BEFORE=$HASH_BEFORE"
+        echo "HASH_AFTER=$HASH_AFTER"
         if [ "$HASH_BEFORE" != "$HASH_AFTER" ]; then
           echo "File seen_links_ntc.txt was modified."
         else
           echo "File not modified."
         fi
 
-    # Save cache only if the file was modified
     - name: Save Cache if Links Changed
       if: ${{ env.HASH_BEFORE != env.HASH_AFTER }}
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.HASH_AFTER }}  # Use hash after modification
+        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.HASH_AFTER }}
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
 
