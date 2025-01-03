@@ -49,6 +49,7 @@ jobs:
           echo "NEW_CACHE_KEY=$new_key" >> $GITHUB_ENV
         else
           echo "NEW_CACHE_KEY=empty-cache" >> $GITHUB_ENV
+        fi
 
     - name: Save Cache If Updated
       if: ${{ steps.cache-restore.outputs.cache-hit == 'false' || env.NEW_CACHE_KEY != hashFiles('seen_links_ntc.txt') }}
