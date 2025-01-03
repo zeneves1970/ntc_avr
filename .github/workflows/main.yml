@@ -29,15 +29,13 @@ jobs:
       id: cache-key
       run: |
         if [ -f seen_links_ntc.txt ]; then
-          timestamp=$(date +%Y%m%d%H%M%S)
-          key=$(sha256sum seen_links_ntc.txt | awk '{print $1}')-$timestamp
+          key=$(sha256sum seen_links_ntc.txt | awk '{print $1}')
         else
           key="empty-cache"
         fi
         echo "CACHE_KEY=$key" >> $GITHUB_ENV
         echo "Cache key generated: $key"
 
-    # Step to check if the cache is already updated and needs to be restored
     - name: Restore Cache if Available
       uses: actions/cache@v3
       with:
@@ -53,15 +51,6 @@ jobs:
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
       run: python3 ntc_avr.py
 
-    - name: Check if seen_links_ntc.txt was modified
-      run: |
-        if [ -f seen_links_ntc.txt ]; then
-          echo "File seen_links_ntc.txt was modified."
-          ls -l seen_links_ntc.txt
-        else
-          echo "File not found!"
-        fi
-
     - name: Recalculate Cache Key After Script
       id: new-cache-key
       run: |
@@ -73,7 +62,6 @@ jobs:
         echo "NEW_CACHE_KEY=$new_key" >> $GITHUB_ENV
         echo "New cache key: $new_key"
 
-    # Only save cache if seen_links_ntc.txt was updated
     - name: Save Cache if Links Changed
       if: ${{ env.CACHE_KEY != env.NEW_CACHE_KEY }}
       uses: actions/cache@v3
@@ -93,3 +81,4 @@ jobs:
         else
           echo "No cache file found after script execution."
         fi
+
