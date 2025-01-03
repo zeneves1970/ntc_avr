@@ -90,6 +90,8 @@ Content-Transfer-Encoding: 8bit
 
 
 # Função para buscar links de notícias da URL fornecida
+from urllib.parse import urljoin
+
 def get_news_links(url):
     try:
         response = requests.get(url, headers=HEADERS, timeout=10, verify=False)
@@ -98,18 +100,16 @@ def get_news_links(url):
             return []
         
         soup = BeautifulSoup(response.content, 'html.parser')
-
-        # Depuração: imprimir todos os links encontrados
-        all_links = [a['href'] for a in soup.find_all("a", href=True)]
-        print(f"Todos os links encontrados: {all_links}")
-        
         links = set()
-        for a_tag in all_links:
-            if "news.jsf" in a_tag:
-                full_link = f"https://www.noticiasdeaveiro.pt/{a_tag}"
-                links.add(full_link)
 
-        print(f"Links filtrados: {links}")
+        # Selecionar links dentro da <div class="td-module-thumb">
+        for div in soup.find_all("div", class_="td-module-thumb"):
+            a_tag = div.find("a", href=True)  # Encontrar a tag <a> dentro da <div>
+            if a_tag:
+                full_link = urljoin(BASE_URL, a_tag['href'])  # Montar a URL completa
+                links.add(full_link)
+        
+        print(f"Links encontrados: {links}")
         return links
     except Exception as e:
         print(f"Erro ao buscar links: {e}")
