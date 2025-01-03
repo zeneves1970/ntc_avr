@@ -25,12 +25,23 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Restore Cache
-      id: cache-restore
+    - name: Calculate Cache Key Before Script
+      id: cache-key
+      run: |
+        if [ -f seen_links_ntc.txt ]; then
+          timestamp=$(date +%Y%m%d%H%M%S)
+          key=$(sha256sum seen_links_ntc.txt | awk '{print $1}')-$timestamp
+        else
+          key="empty-cache"
+        fi
+        echo "CACHE_KEY=$key" >> $GITHUB_ENV
+        echo "Cache key generated: $key"
+
+    - name: Restore Cache if Available
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-cache-ntc-${{ hashFiles('seen_links_ntc.txt') }}
+        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.CACHE_KEY }}
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
 
@@ -41,19 +52,42 @@ jobs:
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
       run: python3 ntc_avr.py
 
-    - name: Check Cache Key After Script
-      id: check-key
+    - name: Check if seen_links_ntc.txt was modified
+      run: |
+        if [ -f seen_links_ntc.txt ]; then
+          echo "File seen_links_ntc.txt was modified."
+          ls -l seen_links_ntc.txt
+        else
+          echo "File not found!"
+        fi
+
+    - name: Recalculate Cache Key After Script
+      id: new-cache-key
       run: |
         if [ -f seen_links_ntc.txt ]; then
           new_key=$(sha256sum seen_links_ntc.txt | awk '{print $1}')
-          echo "NEW_CACHE_KEY=$new_key" >> $GITHUB_ENV
         else
-          echo "NEW_CACHE_KEY=empty-cache" >> $GITHUB_ENV
+          new_key="empty-cache"
         fi
+        echo "NEW_CACHE_KEY=$new_key" >> $GITHUB_ENV
+        echo "New cache key: $new_key"
 
-    - name: Save Cache If Updated
-      if: ${{ steps.cache-restore.outputs.cache-hit == 'false' || env.NEW_CACHE_KEY != hashFiles('seen_links_ntc.txt') }}
+    - name: Save Cache if Links Changed
+      if: ${{ env.CACHE_KEY != env.NEW_CACHE_KEY }}
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
         key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.NEW_CACHE_KEY }}
+        restore-keys: |
+          ${{ runner.os }}-seen-links-cache-ntc-
+
+    - name: Final Check and Cache Status
+      run: |
+        echo "Cache Key Before: ${{ env.CACHE_KEY }}"
+        echo "New Cache Key After: ${{ env.NEW_CACHE_KEY }}"
+        if [ -f seen_links_ntc.txt ]; then
+          echo "Cache file content after script execution:"
+          cat seen_links_ntc.txt
+        else
+          echo "No cache file found after script execution."
+        fi
