@@ -157,7 +157,7 @@ def monitor_news():
     current_links = get_news_links(URL)
 
     # Encontrando novos links que não foram vistos antes
-    new_links = {link for link in current_links if link not in seen_links}
+    new_links = {link for link in current_links if link not in seen_links_ntc}
 
     if new_links:
         print(f"Novos links encontrados: {new_links}")
