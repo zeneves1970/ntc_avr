@@ -24,6 +24,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+
     # Step to check if the cache is already updated and needs to be restored
     - name: Restore Cache if Available
       id: cache-restore
@@ -33,16 +34,18 @@ jobs:
         key: ${{ runner.os }}-seen-links-cache-ntc-${{ hashFiles('seen_links_ntc.txt') }}
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
+
     - name: Save hash of seen_links_ntc.txt before running the script
       id: hash-before
       run: |
         if [ -f seen_links_ntc.txt ]; then
           hash_before=$(sha256sum seen_links_ntc.txt | cut -d ' ' -f 1)
           echo "Hash before: $hash_before"
-          echo "::set-output name=hash_before::$hash_before"
+          echo "HASH_BEFORE=$hash_before" >> $GITHUB_ENV
         else
-          echo "::set-output name=hash_before::"
+          echo "HASH_BEFORE=" >> $GITHUB_ENV
         fi
+
     - name: Run the Python Script
       env:
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
@@ -56,30 +59,33 @@ jobs:
         if [ -f seen_links_ntc.txt ]; then
           hash_after=$(sha256sum seen_links_ntc.txt | cut -d ' ' -f 1)
           echo "Hash after: $hash_after"
-          echo "::set-output name=hash_after::$hash_after"
+          echo "HASH_AFTER=$hash_after" >> $GITHUB_ENV
         else
-          echo "::set-output name=hash_after::"
+          echo "HASH_AFTER=" >> $GITHUB_ENV
         fi
+
     - name: Check if seen_links_ntc.txt was modified
       run: |
-        if [ "${{ steps.hash-before.outputs.hash_before }}" != "${{ steps.hash-after.outputs.hash_after }}" ]; then
+        if [ "$HASH_BEFORE" != "$HASH_AFTER" ]; then
           echo "File seen_links_ntc.txt was modified."
         else
           echo "File not modified."
         fi
+
     # Only save cache if seen_links_ntc.txt was updated
     - name: Save Cache if Links Changed
-      if: steps.hash-before.outputs.hash_before != steps.hash-after.outputs.hash_after
+      if: ${{ env.HASH_BEFORE != env.HASH_AFTER }}
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-cache-ntc-${{ steps.hash-after.outputs.hash_after }}  # Key based on hash after modification
+        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.HASH_AFTER }}  # Key based on hash after modification
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
+
     - name: Final Check and Cache Status
       run: |
         echo "Cache Key Before: ${{ steps.cache-restore.outputs.cache-key }}"
-        echo "New Cache Key After: ${{ steps.hash-after.outputs.hash_after }}"
+        echo "New Cache Key After: ${{ env.HASH_AFTER }}"
         if [ -f seen_links_ntc.txt ]; then
           echo "Cache file content after script execution:"
           cat seen_links_ntc.txt
