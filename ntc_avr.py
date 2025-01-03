@@ -68,7 +68,7 @@ def save_seen_links_ntc(seen_links_ntc):
 
 # Função para enviar uma notificação por e-mail
 def send_email_notification(article_content):
-    subject = "Novo comunicado da PGRP!"
+    subject = "Nova noticia!"
 
     email_text = f"""\
 From: {EMAIL_USER}
@@ -118,35 +118,19 @@ def get_news_links(url):
 
 def get_article_content(url):
     try:
-        response = requests.get(url, headers=HEADERS, timeout=10, verify=False)  # Inclui cabeçalhos e timeout
+        response = requests.get(url, headers=HEADERS, timeout=10, verify=False)
         if response.status_code != 200:
             print(f"Erro ao acessar a notícia: {response.status_code}")
             return "Erro ao acessar a notícia."
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        # Extrair título
-        title_elem = soup.find("div", class_="news-detail-title")
-        title = title_elem.get_text(strip=True) if title_elem else "Título não encontrado."
+        # Extrair o título diretamente
+        title_elem = soup.find("a", class_="entry-title td-module-title")
+        title = title_elem['title'] if title_elem and 'title' in title_elem.attrs else "Título não encontrado."
 
-        # Extrair resumo
-        summary_elem = soup.find("div", class_="news-detail-summary")
-        summary = " ".join(
-            [elem.get_text(strip=True) for elem in summary_elem.find_all(["p", "div"], recursive=True)]
-        ) if summary_elem else "Resumo não encontrado."
-
-        # Extrair corpo da notícia
-        body_elem = soup.find("div", class_="news-detail-body")
-        body = extract_text_ordered(body_elem) if body_elem else "Conteúdo vazio."
-
-        # Montar o conteúdo final do e-mail
-        article_content = f"""
-        {title}\n
-        {summary}\n
-        {body}
-        """
-
-        return article_content
+        # Retorna apenas o título para simplificar o conteúdo enviado por e-mail
+        return title
     except Exception as e:
         print(f"Erro ao processar a notícia: {e}")
         return "Erro ao processar a notícia."
