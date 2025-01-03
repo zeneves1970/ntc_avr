@@ -41,30 +41,24 @@ SEEN_LINKS_NTC_FILE = "seen_links_ntc.txt"  # Nome do arquivo para armazenar lin
 
 # Função para carregar links já vistos de um arquivo
 def load_seen_links_ntc():
-    if os.path.exists(SEEN_LINKS_NTC_FILE) and os.path.getsize(SEEN_LINKS_NTC_FILE) > 0:
-        try:
+    seen_links = set()
+    try:
+        if os.path.exists(SEEN_LINKS_NTC_FILE) and os.path.getsize(SEEN_LINKS_NTC_FILE) > 0:
             with open(SEEN_LINKS_NTC_FILE, "r") as file:
-                links = {link.strip() for link in file.readlines() if link.strip()}
-                print(f"Links carregados da cache: {links}")
-                return links
-        except Exception as e:
-            print(f"Erro ao carregar cache: {e}")
-    else:
-        print("Cache vazio ou não existe. Criando novo conjunto de links.")
-    return set()
+                seen_links = {line.strip() for line in file if line.strip()}
+        print(f"Links carregados da cache: {seen_links}")
+    except Exception as e:
+        print(f"Erro ao carregar a cache de links: {e}")
+    return seen_links
 
 
 def save_seen_links_ntc(seen_links_ntc):
     try:
-        # Abrir o arquivo para escrita e garantir que a cache seja atualizada
         with open(SEEN_LINKS_NTC_FILE, "w") as file:
-            for link in seen_links_ntc:
-                file.write(f"{link}\n")
-            file.flush()  # Forçar a escrita no arquivo
-            os.fsync(file.fileno())  # Garantir que o conteúdo seja persistido no disco
+            file.writelines(f"{link}\n" for link in sorted(seen_links_ntc))
         print("Cache atualizada com novos links.")
     except Exception as e:
-        print(f"Erro ao salvar links na cache: {e}")
+        print(f"Erro ao salvar a cache: {e}")
 
 
 # Função para enviar uma notificação por e-mail
@@ -144,25 +138,22 @@ def monitor_news():
     seen_links_ntc = load_seen_links_ntc()  # Carregar links já vistos
     current_links = get_news_links(URL)  # Obter os links atuais
 
-    # Encontrando novos links que não foram vistos antes
+    print(f"Links atuais na página: {current_links}")
+    print(f"Links já vistos: {seen_links_ntc}")
+
     new_links = {link for link in current_links if link not in seen_links_ntc}
 
     if new_links:
         print(f"Novos links encontrados: {new_links}")
         for link in new_links:
             try:
-                # Obter título e link da notícia
                 article_title, article_url = get_article_title_and_url(link)
-                
                 if article_title and article_url:
-                    # Enviar e-mail com título e link
                     send_email_notification(article_title, article_url)
             except Exception as e:
                 print(f"Erro ao enviar e-mail: {e}")
-
-        # Atualizar a lista de links vistos (cache) com os novos links
         seen_links_ntc.update(new_links)
-        save_seen_links_ntc(seen_links_ntc)  # Gravar a cache atualizada
+        save_seen_links_ntc(seen_links_ntc)
     else:
         print("Nenhuma nova notícia para enviar e-mail.")
 
