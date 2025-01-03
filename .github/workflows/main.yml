@@ -25,8 +25,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    # Gerar chave de cache com base no conteúdo de seen_links_ntc.txt
-    - name: Generate Cache Key
+    - name: Calculate cache key based on seen_links_ntc.txt
       id: cache-key
       run: |
         if [ -f seen_links_ntc.txt ]; then
@@ -34,27 +33,24 @@ jobs:
         else
           key="empty-cache"
         fi
-        echo "key=$key" >> $GITHUB_ENV
+        echo "CACHE_KEY=$key" >> $GITHUB_ENV
 
-    # Restaurar cache utilizando a chave gerada
-    - name: Restore Cache
+    - name: Restore Cache if Available
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.key }}
+        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.CACHE_KEY }}
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
 
-    # Executar o script Python
-    - name: Run Script
+    - name: Run the Python Script
       env:
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
       run: python3 ntc_avr.py
 
-    # Gerar a nova chave de cache após a execução
-    - name: Generate New Cache Key
+    - name: Recalculate Cache Key and Update if Changed
       id: new-cache-key
       run: |
         if [ -f seen_links_ntc.txt ]; then
@@ -62,12 +58,11 @@ jobs:
         else
           new_key="empty-cache"
         fi
-        echo "new_key=$new_key" >> $GITHUB_ENV
+        echo "NEW_CACHE_KEY=$new_key" >> $GITHUB_ENV
 
-    # Verificar se a chave mudou antes de salvar o cache
-    - name: Save Updated Cache
-      if: ${{ env.key != env.new_key }}
+    - name: Save Updated Cache if Content Changed
+      if: ${{ env.CACHE_KEY != env.NEW_CACHE_KEY }}
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.new_key }}
+        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.NEW_CACHE_KEY }}
