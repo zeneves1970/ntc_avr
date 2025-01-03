@@ -68,7 +68,7 @@ def save_seen_links_ntc(seen_links_ntc):
 
 # Função para enviar uma notificação por e-mail
 def send_email_notification(article_title, article_url):
-    subject = "Novo comunicado da PGRP!"
+    subject = "Nova noticia!"
 
     # Criar o corpo do e-mail com HTML
     email_text = f"""\
