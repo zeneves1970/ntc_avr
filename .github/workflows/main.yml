@@ -72,7 +72,7 @@ jobs:
           echo "File not modified."
         fi
 
-    # Save cache after the script runs and only if the file was updated
+    # Save cache only if the file was modified
     - name: Save Cache if Links Changed
       if: ${{ env.HASH_BEFORE != env.HASH_AFTER }}
       uses: actions/cache@v3
@@ -92,3 +92,4 @@ jobs:
         else
           echo "No cache file found after script execution."
         fi
+
