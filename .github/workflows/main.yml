@@ -1,4 +1,4 @@
-ame: Send Emails on New Links
+name: Send Emails on New Links
 
 on:
   push:
