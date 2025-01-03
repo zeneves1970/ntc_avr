@@ -36,7 +36,7 @@ TO_EMAIL = os.getenv("TO_EMAIL")  # Recupera do Secret
 # URL da página a ser monitorada
 BASE_URL = "https://www.noticiasdeaveiro.pt/ultimos-artigos/"
 URL = f"{BASE_URL}"  # Página principal
-SEEN_LINKS_FILE = "seen_links_ntc.txt"  # Nome do arquivo para armazenar links já vistos
+SEEN_LINKS_NTC_FILE = "seen_links_ntc.txt"  # Nome do arquivo para armazenar links já vistos
 
 
 # Função para carregar links já vistos de um arquivo
