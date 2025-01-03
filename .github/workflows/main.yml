@@ -38,6 +38,8 @@ jobs:
       id: hash-before
       run: |
         if [ -f seen_links_ntc.txt ]; then
+          echo "Content before:"
+          cat seen_links_ntc.txt
           hash_before=$(sha256sum seen_links_ntc.txt | cut -d ' ' -f 1)
           echo "Hash before: $hash_before"
           echo "HASH_BEFORE=$hash_before" >> $GITHUB_ENV
@@ -56,6 +58,8 @@ jobs:
       id: hash-after
       run: |
         if [ -f seen_links_ntc.txt ]; then
+          echo "Content after:"
+          cat seen_links_ntc.txt
           hash_after=$(sha256sum seen_links_ntc.txt | cut -d ' ' -f 1)
           echo "Hash after: $hash_after"
           echo "HASH_AFTER=$hash_after" >> $GITHUB_ENV
