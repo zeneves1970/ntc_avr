@@ -25,7 +25,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Calculate cache key based on seen_links_ntc.txt
+    - name: Calculate and Set Cache Key
       id: cache-key
       run: |
         if [ -f seen_links_ntc.txt ]; then
@@ -34,6 +34,7 @@ jobs:
           key="empty-cache"
         fi
         echo "CACHE_KEY=$key" >> $GITHUB_ENV
+        echo "Cache key generated: $key"
 
     - name: Restore Cache if Available
       uses: actions/cache@v3
@@ -50,7 +51,7 @@ jobs:
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
       run: python3 ntc_avr.py
 
-    - name: Recalculate Cache Key and Update if Changed
+    - name: Recalculate Cache Key After Script
       id: new-cache-key
       run: |
         if [ -f seen_links_ntc.txt ]; then
@@ -59,8 +60,9 @@ jobs:
           new_key="empty-cache"
         fi
         echo "NEW_CACHE_KEY=$new_key" >> $GITHUB_ENV
+        echo "New cache key: $new_key"
 
-    - name: Save Updated Cache if Content Changed
+    - name: Save Cache if Links Changed
       if: ${{ env.CACHE_KEY != env.NEW_CACHE_KEY }}
       uses: actions/cache@v3
       with:
