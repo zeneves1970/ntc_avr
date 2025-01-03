@@ -92,26 +92,29 @@ Content-Transfer-Encoding: 8bit
 # Função para buscar links de notícias da URL fornecida
 def get_news_links(url):
     try:
-        response = requests.get(url, headers=HEADERS, timeout=10, verify=False)  # Inclui cabeçalhos e timeout
+        response = requests.get(url, headers=HEADERS, timeout=10, verify=False)
         if response.status_code != 200:
             print(f"Erro ao acessar a página: {response.status_code}")
             return []
         
-        # Parse da resposta com BeautifulSoup
         soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Depuração: imprimir todos os links encontrados
+        all_links = [a['href'] for a in soup.find_all("a", href=True)]
+        print(f"Todos os links encontrados: {all_links}")
+        
         links = set()
-        
-        # Ajuste para criar a URL completa
-        for a_tag in soup.find_all("a", href=True):
-            if "news.jsf" in a_tag['href']:  # Apenas links de notícias relevantes
-                full_link = f"https://www.noticiasdeaveiro.pt/{a_tag['href']}"  # Monta a URL completa
+        for a_tag in all_links:
+            if "news.jsf" in a_tag:
+                full_link = f"https://www.noticiasdeaveiro.pt/{a_tag}"
                 links.add(full_link)
-        
-        print(f"Links encontrados: {links}")
+
+        print(f"Links filtrados: {links}")
         return links
     except Exception as e:
         print(f"Erro ao buscar links: {e}")
         return set()
+
 
 def get_article_content(url):
     try:
