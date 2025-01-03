@@ -119,26 +119,24 @@ def get_news_links(url):
         return set()
 
 
-def get_article_content(url):
+def get_article_title_and_url(url):
     try:
+        # Realiza a requisição da página da notícia
         response = requests.get(url, headers=HEADERS, timeout=10, verify=False)
         if response.status_code != 200:
             print(f"Erro ao acessar a notícia: {response.status_code}")
-            return "Erro ao acessar a notícia."
+            return None, None
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        # Localizar a tag <h3> com a classe "entry-title td-module-title"
-        title_elem = soup.find("h3", class_="entry-title td-module-title")
-        if title_elem:
-            # Extrair o texto do link dentro de <h3>
-            title = title_elem.get_text(strip=True)
-            return title
+        # Extrair título
+        title_elem = soup.find("h1", class_="entry-title")
+        title = title_elem.get_text(strip=True) if title_elem else "Título não encontrado."
 
-        return "Título não encontrado."
+        return title, url  # Retorna o título e o link da notícia
     except Exception as e:
         print(f"Erro ao processar a notícia: {e}")
-        return "Erro ao processar a notícia."
+        return None, None
 
 
 def monitor_news():
@@ -152,11 +150,12 @@ def monitor_news():
         print(f"Novos links encontrados: {new_links}")
         for link in new_links:
             try:
-                # Obter título da notícia
-                article_title = get_article_content(link)
+                # Obter o título e o link da notícia
+                article_title, article_url = get_article_title_and_url(link)
                 
-                # Enviar e-mail com título e link
-                send_email_notification(article_title, link)
+                if article_title and article_url:
+                    # Enviar e-mail com título e link
+                    send_email_notification(article_title, article_url)
             except Exception as e:
                 print(f"Erro ao enviar e-mail: {e}")
 
