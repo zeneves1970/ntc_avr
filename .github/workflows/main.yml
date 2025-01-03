@@ -25,23 +25,25 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-
-    # Gerar chave de cache dinâmica
+    # Gerar chave de cache baseada no conteúdo de seen_links_ntc.txt
     - name: Generate Cache Key
       id: cache-key
       run: |
-        key=$(sha256sum seen_links_ntc.txt | awk '{print $1}')
+        if [ -f seen_links_ntc.txt ]; then
+          key=$(sha256sum seen_links_ntc.txt | awk '{print $1}')
+        else
+          key="empty-cache"
+        fi
         echo "key=$key" >> $GITHUB_ENV
 
-    # Restaurar cache
+    # Restaurar cache usando a chave gerada
     - name: Restore Cache
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
         key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.key }}
         restore-keys: |
-          ${{ runner.os }}-seen-links-ntc-cache-
-
+          ${{ runner.os }}-seen-links-cache-ntc-
 
     # Executar o script Python
     - name: Run Script
@@ -51,17 +53,21 @@ jobs:
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
       run: python3 ntc_avr.py
 
-    # Gerar novo hash para seen_links.txt
+    # Gerar um novo hash para seen_links_ntc.txt
     - name: Generate New Cache Key
       id: new-cache-key
       run: |
-        new_key=$(sha256sum seen_links_ntc.txt | awk '{print $1}')
+        if [ -f seen_links_ntc.txt ]; then
+          new_key=$(sha256sum seen_links_ntc.txt | awk '{print $1}')
+        else
+          new_key="empty-cache"
+        fi
         echo "new_key=$new_key" >> $GITHUB_ENV
 
-    # Salvar cache se houve alteração no arquivo
+    # Salvar o cache se houve alteração no arquivo seen_links_ntc.txt
     - name: Save Updated Cache
       if: env.key != env.new_key
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-ntc-cache-${{ env.new_key }}
+        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.new_key }}
