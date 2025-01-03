@@ -29,7 +29,8 @@ jobs:
       id: cache-key
       run: |
         if [ -f seen_links_ntc.txt ]; then
-          key=$(sha256sum seen_links_ntc.txt | awk '{print $1}')
+          timestamp=$(date +%Y%m%d%H%M%S)
+          key=$(sha256sum seen_links_ntc.txt | awk '{print $1}')-$timestamp
         else
           key="empty-cache"
         fi
@@ -44,21 +45,21 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
 
-    - name: Check Cache Content
-      run: |
-        if [ -f seen_links_ntc.txt ]; then
-          echo "Cache file exists. Content:"
-          cat seen_links_ntc.txt
-        else
-          echo "Cache file does not exist."
-        fi
-
     - name: Run the Python Script
       env:
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
       run: python3 ntc_avr.py
+
+    - name: Check if seen_links_ntc.txt was modified
+      run: |
+        if [ -f seen_links_ntc.txt ]; then
+          echo "File seen_links_ntc.txt was modified."
+          ls -l seen_links_ntc.txt
+        else
+          echo "File not found!"
+        fi
 
     - name: Recalculate Cache Key After Script
       id: new-cache-key
