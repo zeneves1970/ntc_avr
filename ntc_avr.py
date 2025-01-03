@@ -33,11 +33,14 @@ def load_seen_links_ntc():
 def save_seen_links_ntc(seen_links_ntc):
     """Salva links processados."""
     try:
-        with open(SEEN_LINKS_NTC_FILE, "w") as file:
-            file.writelines(f"{link}\n" for link in sorted(seen_links_ntc))
+        # Abrir o arquivo em modo de append para adicionar novos links sem apagar os anteriores
+        with open(SEEN_LINKS_NTC_FILE, "a") as file:
+            for link in sorted(seen_links_ntc):
+                file.write(f"{link}\n")
         print(f"[DEBUG] Cache atualizada com {len(seen_links_ntc)} links.")
     except Exception as e:
         print(f"[ERRO] Falha ao salvar links: {e}")
+
 
 def get_news_links(url):
     """Busca links de notícias na página principal."""
