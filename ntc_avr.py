@@ -150,7 +150,7 @@ def get_article_content(url):
 
 
 def monitor_news():
-    seen_links = load_seen_links()
+    seen_links = load_seen_links_ntc()
     current_links = get_news_links(URL)
 
     # Encontrando novos links que não foram vistos antes
