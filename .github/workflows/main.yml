@@ -77,6 +77,8 @@ jobs:
       with:
         path: seen_links_ntc.txt
         key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.NEW_CACHE_KEY }}
+        restore-keys: |
+          ${{ runner.os }}-seen-links-cache-ntc-
 
     - name: Final Check and Cache Status
       run: |
