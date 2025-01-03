@@ -25,22 +25,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Calculate Cache Key Before Script
-      id: cache-key
-      run: |
-        if [ -f seen_links_ntc.txt ]; then
-          key=$(sha256sum seen_links_ntc.txt | awk '{print $1}')
-        else
-          key="empty-cache"
-        fi
-        echo "CACHE_KEY=$key" >> $GITHUB_ENV
-        echo "Cache key generated: $key"
-
+    # Step to check if the cache is already updated and needs to be restored
     - name: Restore Cache if Available
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.CACHE_KEY }}
+        key: ${{ runner.os }}-seen-links-cache-ntc-${{ hashFiles('seen_links_ntc.txt') }}
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
 
@@ -51,34 +41,32 @@ jobs:
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
       run: python3 ntc_avr.py
 
-    - name: Recalculate Cache Key After Script
-      id: new-cache-key
+    - name: Check if seen_links_ntc.txt was modified
       run: |
         if [ -f seen_links_ntc.txt ]; then
-          new_key=$(sha256sum seen_links_ntc.txt | awk '{print $1}')
+          echo "File seen_links_ntc.txt was modified."
+          ls -l seen_links_ntc.txt
         else
-          new_key="empty-cache"
+          echo "File not found!"
         fi
-        echo "NEW_CACHE_KEY=$new_key" >> $GITHUB_ENV
-        echo "New cache key: $new_key"
 
+    # Only save cache if seen_links_ntc.txt was updated
     - name: Save Cache if Links Changed
-      if: ${{ env.CACHE_KEY != env.NEW_CACHE_KEY }}
+      if: ${{ steps.cache-key.outputs.cache-hit != 'true' }}
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.NEW_CACHE_KEY }}
+        key: ${{ runner.os }}-seen-links-cache-ntc-${{ hashFiles('seen_links_ntc.txt') }}
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
 
     - name: Final Check and Cache Status
       run: |
-        echo "Cache Key Before: ${{ env.CACHE_KEY }}"
-        echo "New Cache Key After: ${{ env.NEW_CACHE_KEY }}"
+        echo "Cache Key Before: ${{ steps.cache-key.outputs.cache-key }}"
+        echo "New Cache Key After: ${{ steps.cache-key.outputs.new-cache-key }}"
         if [ -f seen_links_ntc.txt ]; then
           echo "Cache file content after script execution:"
           cat seen_links_ntc.txt
-        else
+        else:
           echo "No cache file found after script execution."
         fi
-
