@@ -24,7 +24,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-
     # Step to check if the cache is already updated and needs to be restored
     - name: Restore Cache if Available
       id: cache-restore
@@ -34,7 +33,6 @@ jobs:
         key: ${{ runner.os }}-seen-links-cache-ntc-${{ hashFiles('seen_links_ntc.txt') }}
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
-
     - name: Save hash of seen_links_ntc.txt before running the script
       id: hash-before
       run: |
@@ -45,7 +43,6 @@ jobs:
         else
           echo "::set-output name=hash_before::"
         fi
-
     - name: Run the Python Script
       env:
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
@@ -63,7 +60,6 @@ jobs:
         else
           echo "::set-output name=hash_after::"
         fi
-
     - name: Check if seen_links_ntc.txt was modified
       run: |
         if [ "${{ steps.hash-before.outputs.hash_before }}" != "${{ steps.hash-after.outputs.hash_after }}" ]; then
@@ -71,7 +67,6 @@ jobs:
         else
           echo "File not modified."
         fi
-
     # Only save cache if seen_links_ntc.txt was updated
     - name: Save Cache if Links Changed
       if: steps.hash-before.outputs.hash_before != steps.hash-after.outputs.hash_after
@@ -81,11 +76,10 @@ jobs:
         key: ${{ runner.os }}-seen-links-cache-ntc-${{ steps.hash-after.outputs.hash_after }}  # Key based on hash after modification
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
-
     - name: Final Check and Cache Status
       run: |
         echo "Cache Key Before: ${{ steps.cache-restore.outputs.cache-key }}"
-        echo "New Cache Key After: ${{ steps.cache-restore.outputs.cache-key }}"
+        echo "New Cache Key After: ${{ steps.hash-after.outputs.hash_after }}"
         if [ -f seen_links_ntc.txt ]; then
           echo "Cache file content after script execution:"
           cat seen_links_ntc.txt
