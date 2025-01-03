@@ -40,10 +40,10 @@ SEEN_LINKS_FILE = "seen_links_ntc.txt"  # Nome do arquivo para armazenar links j
 
 
 # Função para carregar links já vistos de um arquivo
-def load_seen_links():
-    if os.path.exists(SEEN_LINKS_FILE) and os.path.getsize(SEEN_LINKS_FILE) > 0:
+def load_seen_links_ntc():
+    if os.path.exists(SEEN_LINKS_NTC_FILE) and os.path.getsize(SEEN_LINKS_NTC_FILE) > 0:
         try:
-            with open(SEEN_LINKS_FILE, "r") as file:
+            with open(SEEN_LINKS_NTC_FILE, "r") as file:
                 links = {link.strip() for link in file.readlines() if link.strip()}
                 print(f"Links carregados da cache: {links}")
                 return links
@@ -54,10 +54,10 @@ def load_seen_links():
     return set()
 
 
-def save_seen_links(seen_links):
+def save_seen_links_ntc(seen_links_ntc):
     try:
-        with open(SEEN_LINKS_FILE, "w") as file:
-            for link in seen_links:
+        with open(SEEN_LINKS_NTC_FILE, "w") as file:
+            for link in seen_links_ntc:
                 file.write(f"{link}\n")
             file.flush()
             os.fsync(file.fileno())  # Garante que as mudanças sejam persistidas
