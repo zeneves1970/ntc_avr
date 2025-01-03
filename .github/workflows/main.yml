@@ -72,13 +72,13 @@ jobs:
           echo "File not modified."
         fi
 
-    # Only save cache if seen_links_ntc.txt was updated
+    # Save cache after the script runs and only if the file was updated
     - name: Save Cache if Links Changed
       if: ${{ env.HASH_BEFORE != env.HASH_AFTER }}
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.HASH_AFTER }}  # Key based on hash after modification
+        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.HASH_AFTER }}  # Use hash after modification
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
 
