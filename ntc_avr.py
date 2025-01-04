@@ -1,11 +1,13 @@
 import os
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+import sqlite3
 import smtplib
 import urllib3
-from urllib.parse import urljoin
 
 # Configurações
+BASE_URL = "https://www.noticiasdeaveiro.pt/ultimos-artigos/"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
@@ -13,43 +15,52 @@ HEADERS = {
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 TO_EMAIL = os.getenv("TO_EMAIL")
-BASE_URL = "https://www.noticiasdeaveiro.pt/ultimos-artigos/"
-SEEN_LINKS_NTC_FILE = "seen_links_ntc.txt"
+DB_NAME = "seen_links.db"
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-def load_seen_links_ntc():
-    """Carrega links já processados."""
-    seen_links = set()
-    try:
-        if os.path.exists(SEEN_LINKS_NTC_FILE) and os.path.getsize(SEEN_LINKS_NTC_FILE) > 0:
-            with open(SEEN_LINKS_NTC_FILE, "r") as file:
-                seen_links = {line.strip() for line in file if line.strip()}
-        print(f"[DEBUG] Links carregados: {seen_links}")
-    except Exception as e:
-        print(f"[ERRO] Falha ao carregar links: {e}")
+# 1. Inicializa o banco de dados
+def initialize_db():
+    """Cria o banco de dados e a tabela de links."""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS seen_links (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        link TEXT UNIQUE NOT NULL
+    )
+    """)
+    conn.commit()
+    conn.close()
+
+# 2. Carrega links já processados
+def load_seen_links():
+    """Carrega os links já processados do banco de dados."""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT link FROM seen_links")
+    seen_links = {row[0] for row in cursor.fetchall()}
+    conn.close()
     return seen_links
 
-def save_seen_links_ntc(seen_links_ntc):
-    """Salva links processados."""
-    try:
-        # Reescrever o arquivo com todos os links processados, sem duplicações
-        with open(SEEN_LINKS_NTC_FILE, "w") as file:
-            for link in sorted(seen_links_ntc):
-                file.write(f"{link}\n")
-        print(f"[DEBUG] Cache atualizada com {len(seen_links_ntc)} links.")
-    except Exception as e:
-        print(f"[ERRO] Falha ao salvar links: {e}")
+# 3. Salva novos links
+def save_seen_links(new_links):
+    """Salva novos links no banco de dados."""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.executemany("INSERT OR IGNORE INTO seen_links (link) VALUES (?)", [(link,) for link in new_links])
+    conn.commit()
+    conn.close()
 
-
+# 4. Coleta links da página principal
 def get_news_links(url):
-    """Busca links de notícias na página principal."""
+    """Busca links de notícias no site."""
     try:
         response = requests.get(url, headers=HEADERS, timeout=10, verify=False)
         if response.status_code != 200:
             print(f"[ERRO] Status {response.status_code}")
             return set()
-        
+
         soup = BeautifulSoup(response.content, 'html.parser')
         links = {
             urljoin(BASE_URL, a['href'])
@@ -62,6 +73,7 @@ def get_news_links(url):
         print(f"[ERRO] Falha ao buscar links: {e}")
         return set()
 
+# 5. Extrai título e URL
 def get_article_title_and_url(url):
     """Extrai título e URL de uma notícia."""
     try:
@@ -77,6 +89,7 @@ def get_article_title_and_url(url):
         print(f"[ERRO] Falha ao processar notícia: {e}")
         return None, None
 
+# 6. Envia e-mail
 def send_email_notification(article_title, article_url):
     """Envia notificação por e-mail."""
     subject = "Nova notícia!"
@@ -98,12 +111,14 @@ Content-Type: text/html; charset=utf-8
     except Exception as e:
         print(f"[ERRO] Falha ao enviar e-mail: {e}")
 
+# 7. Monitoramento principal
 def monitor_news():
-    seen_links_ntc = load_seen_links_ntc()
+    """Monitora o site e envia notificações para novos links."""
+    initialize_db()  # Certifica-se de que o banco está pronto
+    seen_links = load_seen_links()
     current_links = get_news_links(BASE_URL)
 
-    # Identifica links novos usando conjuntos
-    new_links = set(current_links) - seen_links_ntc
+    new_links = set(current_links) - seen_links
 
     if new_links:
         print(f"[DEBUG] Novos links: {new_links}")
@@ -111,11 +126,10 @@ def monitor_news():
             title, url = get_article_title_and_url(link)
             if title and url:
                 send_email_notification(title, url)
-        seen_links_ntc.update(new_links)  # Adiciona os novos links ao conjunto
-        save_seen_links_ntc(seen_links_ntc)
+        save_seen_links(new_links)
     else:
         print("[DEBUG] Nenhuma nova notícia.")
 
+# 8. Execução
 if __name__ == "__main__":
     monitor_news()
-
