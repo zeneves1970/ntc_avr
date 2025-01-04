@@ -38,8 +38,6 @@ jobs:
       id: hash-before
       run: |
         if [ -s seen_links_ntc.txt ]; then
-          echo "Content before:"
-          cat seen_links_ntc.txt
           hash_before=$(sha256sum seen_links_ntc.txt | cut -d ' ' -f 1)
           echo "Hash before: $hash_before"
           echo "HASH_BEFORE=$hash_before" >> $GITHUB_ENV
@@ -58,8 +56,6 @@ jobs:
       id: hash-after
       run: |
         if [ -s seen_links_ntc.txt ]; then
-          echo "Content after:"
-          cat seen_links_ntc.txt
           hash_after=$(sha256sum seen_links_ntc.txt | cut -d ' ' -f 1)
           echo "Hash after: $hash_after"
           echo "HASH_AFTER=$hash_after" >> $GITHUB_ENV
@@ -79,13 +75,12 @@ jobs:
           echo "MODIFIED=false" >> $GITHUB_ENV
         fi
 
-    # Este passo garante que a cache seja salva com o novo conteúdo do arquivo se ele foi modificado
     - name: Save Cache if Links Changed
-      if: ${{ env.HASH_BEFORE != env.HASH_AFTER }}  # Só salva se o arquivo foi modificado
+      if: ${{ env.MODIFIED == 'true' }}  # Garante que a cache só será salva se o arquivo foi modificado
       uses: actions/cache@v3
       with:
         path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.HASH_AFTER }}  # Nova chave baseada no hash
+        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.HASH_AFTER }}  # Nova chave baseada no hash após a execução do script
         restore-keys: |
           ${{ runner.os }}-seen-links-cache-ntc-
 
@@ -99,3 +94,4 @@ jobs:
         else
           echo "No cache file found after script execution."
         fi
+
