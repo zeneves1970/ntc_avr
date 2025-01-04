@@ -5,6 +5,7 @@ from urllib.parse import urljoin
 import sqlite3
 import smtplib
 import urllib3
+import dropbox
 
 # Configurações
 BASE_URL = "https://www.noticiasdeaveiro.pt/ultimos-artigos/"
@@ -16,8 +17,37 @@ EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 TO_EMAIL = os.getenv("TO_EMAIL")
 DB_NAME = "seen_links.db"
+DROPBOX_TOKEN = os.getenv("DROPBOX_TOKEN")  # Adicione o token do Dropbox no ambiente ou no GitHub Secrets
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+DROPBOX_PATH = f"/{DB_NAME}"
+
+# Função para baixar o banco de dados do Dropbox
+def download_db_from_dropbox():
+    """Faz o download do banco de dados do Dropbox."""
+    try:
+        dbx = dropbox.Dropbox(DROPBOX_TOKEN)
+        metadata, res = dbx.files_download(DROPBOX_PATH)
+        with open(DB_NAME, "wb") as f:
+            f.write(res.content)
+        print("[DEBUG] Banco de dados baixado do Dropbox.")
+    except dropbox.exceptions.ApiError as e:
+        if e.error.is_path() and e.error.get_path().is_not_found():
+            print("[DEBUG] Banco de dados não encontrado no Dropbox. Criando um novo.")
+        else:
+            print(f"[ERRO] Falha ao baixar banco de dados: {e}")
+
+# Função para enviar o banco de dados para o Dropbox
+def upload_db_to_dropbox():
+    """Faz o upload do banco de dados para o Dropbox."""
+    try:
+        dbx = dropbox.Dropbox(DROPBOX_TOKEN)
+        with open(DB_NAME, "rb") as f:
+            dbx.files_upload(f.read(), DROPBOX_PATH, mode=dropbox.files.WriteMode("overwrite"))
+        print("[DEBUG] Banco de dados enviado para o Dropbox.")
+    except Exception as e:
+        print(f"[ERRO] Falha ao enviar banco de dados: {e}")
 
 # 1. Inicializa o banco de dados
 def initialize_db():
@@ -114,6 +144,7 @@ Content-Type: text/html; charset=utf-8
 # 7. Monitoramento principal
 def monitor_news():
     """Monitora o site e envia notificações para novos links."""
+    download_db_from_dropbox()  # Baixa o banco de dados antes de iniciar
     initialize_db()  # Certifica-se de que o banco está pronto
     seen_links = load_seen_links()
     current_links = get_news_links(BASE_URL)
@@ -129,6 +160,8 @@ def monitor_news():
         save_seen_links(new_links)
     else:
         print("[DEBUG] Nenhuma nova notícia.")
+    
+    upload_db_to_dropbox()  # Envia o banco de dados atualizado para o Dropbox
 
 # 8. Execução
 if __name__ == "__main__":
