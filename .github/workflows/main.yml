@@ -31,15 +31,12 @@ jobs:
       with:
         path: seen_links_ntc.txt
         key: ${{ runner.os }}-seen-links-cache-ntc-${{ hashFiles('seen_links_ntc.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-seen-links-cache-ntc-
 
     - name: Save hash of seen_links_ntc.txt before running the script
       id: hash-before
       run: |
         if [ -s seen_links_ntc.txt ]; then
           hash_before=$(sha256sum seen_links_ntc.txt | cut -d ' ' -f 1)
-          echo "Hash before: $hash_before"
           echo "HASH_BEFORE=$hash_before" >> $GITHUB_ENV
         else
           echo "HASH_BEFORE=" >> $GITHUB_ENV
@@ -57,7 +54,6 @@ jobs:
       run: |
         if [ -s seen_links_ntc.txt ]; then
           hash_after=$(sha256sum seen_links_ntc.txt | cut -d ' ' -f 1)
-          echo "Hash after: $hash_after"
           echo "HASH_AFTER=$hash_after" >> $GITHUB_ENV
         else
           echo "HASH_AFTER=" >> $GITHUB_ENV
@@ -65,28 +61,15 @@ jobs:
 
     - name: Check if seen_links_ntc.txt was modified
       run: |
-        echo "HASH_BEFORE=$HASH_BEFORE"
-        echo "HASH_AFTER=$HASH_AFTER"
         if [ "$HASH_BEFORE" != "$HASH_AFTER" ]; then
-          echo "File seen_links_ntc.txt was modified. Proceeding with further actions."
           echo "MODIFIED=true" >> $GITHUB_ENV
         else
-          echo "File not modified. Skipping further actions."
           echo "MODIFIED=false" >> $GITHUB_ENV
         fi
 
     - name: Save Cache if Links Changed
       if: ${{ env.MODIFIED == 'true' }}
-      run: |
-        # Gerar uma chave dinâmica baseada no hash e no timestamp
-        timestamp=$(date +%s)
-        new_key="${{ runner.os }}-seen-links-cache-ntc-${{ env.HASH_AFTER }}-${timestamp}"
-        echo "Salvando cache com chave dinâmica: $new_key"
-        tar -czf cache.tar.gz seen_links_ntc.txt
-
-    - name: Upload Cache Artifact
-      if: ${{ env.MODIFIED == 'true' }}
-      uses: actions/upload-artifact@v3
+      uses: actions/cache@v3
       with:
-        name: updated-cache
-        path: cache.tar.gz
+        path: seen_links_ntc.txt
+        key: ${{ runner.os }}-seen-links-cache-ntc-${{ hashFiles('seen_links_ntc.txt') }}-${{ github.run_id }}
