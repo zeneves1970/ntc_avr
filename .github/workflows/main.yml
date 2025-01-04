@@ -1,14 +1,12 @@
-name: Send Emails on New Links
+name: Monitor New Links
 
 on:
-  push:
-    branches:
-      - main
   schedule:
     - cron: "*/15 * * * *"  # Executar a cada 15 minutos
+  workflow_dispatch: # Permite executar manualmente, se necessário.
 
 jobs:
-  process:
+  monitor-news:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,56 +18,14 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Install dependencies
+    - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Restore Cache if Available
-      id: cache-restore
-      uses: actions/cache@v3
-      with:
-        path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-cache-ntc-${{ hashFiles('seen_links_ntc.txt') }}
-
-    - name: Save hash of seen_links_ntc.txt before running the script
-      id: hash-before
-      run: |
-        if [ -s seen_links_ntc.txt ]; then
-          hash_before=$(sha256sum seen_links_ntc.txt | cut -d ' ' -f 1)
-          echo "HASH_BEFORE=$hash_before" >> $GITHUB_ENV
-        else
-          echo "HASH_BEFORE=" >> $GITHUB_ENV
-        fi
-
-    - name: Run the Python Script
+    - name: Run Monitoring Script
       env:
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
-      run: python3 ntc_avr.py
-
-    - name: Save hash of seen_links_ntc.txt after running the script
-      id: hash-after
-      run: |
-        if [ -s seen_links_ntc.txt ]; then
-          hash_after=$(sha256sum seen_links_ntc.txt | cut -d ' ' -f 1)
-          echo "HASH_AFTER=$hash_after" >> $GITHUB_ENV
-        else
-          echo "HASH_AFTER=" >> $GITHUB_ENV
-        fi
-
-    - name: Check if seen_links_ntc.txt was modified
-      run: |
-        if [ "$HASH_BEFORE" != "$HASH_AFTER" ]; then
-          echo "MODIFIED=true" >> $GITHUB_ENV
-        else
-          echo "MODIFIED=false" >> $GITHUB_ENV
-        fi
-
-    - name: Save Cache if Links Changed
-      if: ${{ env.MODIFIED == 'true' }}
-      uses: actions/cache@v3
-      with:
-        path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-cache-ntc-${{ hashFiles('seen_links_ntc.txt') }}-${{ github.run_id }}
+      run: python3 script.py
