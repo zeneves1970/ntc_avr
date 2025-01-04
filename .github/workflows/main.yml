@@ -76,22 +76,18 @@ jobs:
         fi
 
     - name: Save Cache if Links Changed
-      if: ${{ env.MODIFIED == 'true' }}  # Garante que a cache só será salva se o arquivo foi modificado
-      uses: actions/cache@v3
-      with:
-        path: seen_links_ntc.txt
-        key: ${{ runner.os }}-seen-links-cache-ntc-${{ env.HASH_AFTER }}  # Nova chave baseada no hash após a execução do script
-        restore-keys: |
-          ${{ runner.os }}-seen-links-cache-ntc-
-
-    - name: Final Check and Cache Status
+      if: ${{ env.MODIFIED == 'true' }}
       run: |
-        echo "Cache Key Before: ${{ steps.cache-restore.outputs.cache-key }}"
-        echo "New Cache Key After: ${{ env.HASH_AFTER }}"
-        if [ -f seen_links_ntc.txt ]; then
-          echo "Cache file content after script execution:"
-          cat seen_links_ntc.txt
-        else
-          echo "No cache file found after script execution."
-        fi
+        # Gerar uma chave dinâmica baseada no hash e no timestamp
+        timestamp=$(date +%s)
+        new_key="${{ runner.os }}-seen-links-cache-ntc-${{ env.HASH_AFTER }}-${timestamp}"
+        echo "Salvando cache com chave dinâmica: $new_key"
+        tar -czf cache.tar.gz seen_links_ntc.txt
+        mv cache.tar.gz $GITHUB_WORKSPACE/cache.tar.gz
 
+    - name: Save Cache to GitHub Actions (Final Step)
+      if: ${{ env.MODIFIED == 'true' }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: updated-cache
+        path: cache.tar.gz
