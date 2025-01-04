@@ -83,9 +83,8 @@ jobs:
         new_key="${{ runner.os }}-seen-links-cache-ntc-${{ env.HASH_AFTER }}-${timestamp}"
         echo "Salvando cache com chave dinâmica: $new_key"
         tar -czf cache.tar.gz seen_links_ntc.txt
-        mv cache.tar.gz $GITHUB_WORKSPACE/cache.tar.gz
 
-    - name: Save Cache to GitHub Actions (Final Step)
+    - name: Upload Cache Artifact
       if: ${{ env.MODIFIED == 'true' }}
       uses: actions/upload-artifact@v3
       with:
