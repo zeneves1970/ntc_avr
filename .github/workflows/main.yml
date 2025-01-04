@@ -22,10 +22,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install dropbox  # Instala a biblioteca Dropbox
 
     - name: Run Monitoring Script
       env:
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
+        DROPBOX_TOKEN: ${{ secrets.DROPBOX_TOKEN }}  # Passa o token do Dropbox como variável de ambiente
       run: python3 script.py
