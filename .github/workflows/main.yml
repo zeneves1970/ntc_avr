@@ -29,6 +29,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-python-
 
+    - name: Clear pip cache
+  run: rm -rf ~/.cache/pip
+  
     # 4. Instalar dependências do Python
     - name: Install Dependencies
       run: |
