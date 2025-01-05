@@ -6,6 +6,7 @@ import sqlite3
 import smtplib
 import urllib3
 import dropbox
+from dropbox.exceptions import AuthError
 
 # Configurações
 BASE_URL = "https://www.noticiasdeaveiro.pt/ultimos-artigos/"
