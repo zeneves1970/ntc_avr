@@ -17,17 +17,39 @@ EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 TO_EMAIL = os.getenv("TO_EMAIL")
 DB_NAME = "seen_links.db"
-DROPBOX_TOKEN = os.getenv("DROPBOX_TOKEN")  # Adicione o token do Dropbox no ambiente ou no GitHub Secrets
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# Recuperar os secrets do ambiente
+APP_KEY = os.getenv("APP_KEY")
+APP_SECRET = os.getenv("APP_SECRET")
+DROPBOX_TOKEN = os.getenv("DROPBOX_TOKEN")
 
 DROPBOX_PATH = f"/{DB_NAME}"
+
+# Configurar warnings do urllib
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Configurando o cliente do Dropbox
+def get_dropbox_client():
+    """Inicializa o cliente do Dropbox com os valores do ambiente."""
+    try:
+        dbx = dropbox.Dropbox(
+            app_key=APP_KEY,
+            app_secret=APP_SECRET,
+            oauth2_refresh_token=DROPBOX_TOKEN,
+        )
+        # Testar conexão
+        user = dbx.users_get_current_account()
+        print(f"[DEBUG] Conectado ao Dropbox como: {user.name.display_name}")
+        return dbx
+    except dropbox.exceptions.AuthError as e:
+        print(f"[ERRO] Falha na autenticação do Dropbox: {e}")
+        raise
 
 # Função para baixar o banco de dados do Dropbox
 def download_db_from_dropbox():
     """Faz o download do banco de dados do Dropbox."""
     try:
-        dbx = dropbox.Dropbox(DROPBOX_TOKEN)
+        dbx = get_dropbox_client()
         metadata, res = dbx.files_download(DROPBOX_PATH)
         with open(DB_NAME, "wb") as f:
             f.write(res.content)
@@ -42,14 +64,14 @@ def download_db_from_dropbox():
 def upload_db_to_dropbox():
     """Faz o upload do banco de dados para o Dropbox."""
     try:
-        dbx = dropbox.Dropbox(DROPBOX_TOKEN)
+        dbx = get_dropbox_client()
         with open(DB_NAME, "rb") as f:
             dbx.files_upload(f.read(), DROPBOX_PATH, mode=dropbox.files.WriteMode("overwrite"))
         print("[DEBUG] Banco de dados enviado para o Dropbox.")
     except Exception as e:
         print(f"[ERRO] Falha ao enviar banco de dados: {e}")
 
-# 1. Inicializa o banco de dados
+# Inicializa o banco de dados
 def initialize_db():
     """Cria o banco de dados e a tabela de links."""
     conn = sqlite3.connect(DB_NAME)
@@ -63,7 +85,7 @@ def initialize_db():
     conn.commit()
     conn.close()
 
-# 2. Carrega links já processados
+# Carrega links já processados
 def load_seen_links():
     """Carrega os links já processados do banco de dados."""
     conn = sqlite3.connect(DB_NAME)
@@ -73,7 +95,7 @@ def load_seen_links():
     conn.close()
     return seen_links
 
-# 3. Salva novos links
+# Salva novos links
 def save_seen_links(new_links):
     """Salva novos links no banco de dados."""
     conn = sqlite3.connect(DB_NAME)
@@ -82,7 +104,7 @@ def save_seen_links(new_links):
     conn.commit()
     conn.close()
 
-# 4. Coleta links da página principal
+# Coleta links da página principal
 def get_news_links(url):
     """Busca links de notícias no site."""
     try:
@@ -103,7 +125,7 @@ def get_news_links(url):
         print(f"[ERRO] Falha ao buscar links: {e}")
         return set()
 
-# 5. Extrai título e URL
+# Extrai título e URL
 def get_article_title_and_url(url):
     """Extrai título e URL de uma notícia."""
     try:
@@ -119,7 +141,7 @@ def get_article_title_and_url(url):
         print(f"[ERRO] Falha ao processar notícia: {e}")
         return None, None
 
-# 6. Envia e-mail
+# Envia e-mail
 def send_email_notification(article_title, article_url):
     """Envia notificação por e-mail."""
     subject = "Nova notícia!"
@@ -141,7 +163,7 @@ Content-Type: text/html; charset=utf-8
     except Exception as e:
         print(f"[ERRO] Falha ao enviar e-mail: {e}")
 
-# 7. Monitoramento principal
+# Monitoramento principal
 def monitor_news():
     """Monitora o site e envia notificações para novos links."""
     download_db_from_dropbox()  # Baixa o banco de dados antes de iniciar
@@ -163,6 +185,6 @@ def monitor_news():
     
     upload_db_to_dropbox()  # Envia o banco de dados atualizado para o Dropbox
 
-# 8. Execução
+# Execução
 if __name__ == "__main__":
     monitor_news()
