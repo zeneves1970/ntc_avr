@@ -1,12 +1,12 @@
 import os
-import requests
+import dropbox
+from dropbox.exceptions import AuthError
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import sqlite3
 import smtplib
+import requests
 import urllib3
-import dropbox
-from dropbox.exceptions import AuthError
 
 # Configurações
 BASE_URL = "https://www.noticiasdeaveiro.pt/ultimos-artigos/"
@@ -22,7 +22,7 @@ DB_NAME = "seen_links.db"
 # Recuperar os secrets do ambiente
 APP_KEY = os.getenv("APP_KEY")
 APP_SECRET = os.getenv("APP_SECRET")
-DROPBOX_TOKEN = os.getenv("DROPBOX_TOKEN")
+DROPBOX_REFRESH_TOKEN = os.getenv("DROPBOX_TOKEN")
 
 DROPBOX_PATH = f"/{DB_NAME}"
 
@@ -31,14 +31,16 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Configurando o cliente do Dropbox
 def get_dropbox_client():
-    """Inicializa o cliente do Dropbox com os valores do ambiente."""
+    """Inicializa o cliente do Dropbox com os valores do ambiente e usa o refresh_token para renovar o access_token."""
     try:
+        # Usando o refresh_token para obter um novo access_token
         dbx = dropbox.Dropbox(
+            oauth2_refresh_token=DROPBOX_REFRESH_TOKEN,
             app_key=APP_KEY,
-            app_secret=APP_SECRET,
-            oauth2_refresh_token=DROPBOX_TOKEN,
+            app_secret=APP_SECRET
         )
-        # Testar conexão
+        
+        # Testa a conexão com o Dropbox para garantir que o access token é válido
         user = dbx.users_get_current_account()
         print(f"[DEBUG] Conectado ao Dropbox como: {user.name.display_name}")
         return dbx
