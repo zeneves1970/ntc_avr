@@ -10,14 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # 1. Fazer o checkout do repositório
     - name: Checkout Repository
       uses: actions/checkout@v2
 
+    # 2. Configurar o ambiente Python
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.x'
 
+    # 3. Cache das dependências do Python
     - name: Cache Python dependencies
       uses: actions/cache@v3
       with:
@@ -26,16 +29,19 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-python-
 
-    - name: Install Dependencies (Without Cache)
+    # 4. Instalar dependências do Python
+    - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install --no-cache-dir -r requirements.txt
+        pip install -r requirements.txt
 
+    # 5. Executar o script com as variáveis de ambiente
     - name: Run Monitoring Script
       env:
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         TO_EMAIL: ${{ secrets.TO_EMAIL }}
-        DROPBOX_TOKEN: ${{ secrets.DROPBOX_TOKEN }}  # Aqui o token do Dropbox
+        APP_KEY: ${{ secrets.APP_KEY }}            # Chave do app do Dropbox
+        APP_SECRET: ${{ secrets.APP_SECRET }}      # Segredo do app do Dropbox
+        DROPBOX_TOKEN: ${{ secrets.DROPBOX_TOKEN }} # Token de atualização do Dropbox
       run: python3 ntc_avr.py
-
