@@ -1,4 +1,4 @@
-name: Monitor New Links
+name: Monitor noticias Links
 
 on:
   schedule:
